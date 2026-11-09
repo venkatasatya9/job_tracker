@@ -1,0 +1,12 @@
+{
+    "company": "Google",
+    "role": "Data Engineer",
+    "location": "Atlanta",
+    "skills": [
+        "Python",
+        "SQL",
+        "Databricks"
+    ],
+    "status": "Applied",
+    "remote": true
+}
