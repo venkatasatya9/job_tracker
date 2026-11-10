@@ -12,6 +12,20 @@ class Jobs:
             with open(self.FILE_NAME, 'r') as file:
                 self.jobs_data = json.load(file)
 
+            changed = False
+
+            next_id = max((job.get("id", 0) for job in self.jobs_data), default=0) + 1
+
+            for job in self.jobs_data:
+                if "id" not in job:
+                    job["id"] = next_id
+                    next_id += 1
+                    changed = True
+
+            # Save the file only if IDs were added
+            if changed:
+                self.save_jobs()
+
         except FileNotFoundError:
             self.jobs_data = []
 
@@ -28,12 +42,21 @@ class Jobs:
     def add_job(self):
         self.load_jobs()
 
-        company = input("Enter company name: ")
-        role = input("Enter job role: ")
-        location = input("Enter location: ")
-        status = input("Enter application status: ")
+        # Generate the next available ID
+        next_id = max((job["id"] for job in self.jobs_data), default=0) + 1
+
+        company = input("Enter company name: ").strip()
+        role = input("Enter job role: ").strip()
+        location = input("Enter location: ").strip()
+        status = input("Enter application status: ").strip()
+
+        # Validate required fields
+        if not company or not role or not location or not status:
+            print("\nAll fields are required. Job was not added.")
+            return
 
         job = {
+            "id": next_id,
             "company": company,
             "role": role,
             "location": location,
@@ -55,8 +78,8 @@ class Jobs:
             return
 
         print("\n===== JOB APPLICATIONS =====")
-        for index, job in enumerate(self.jobs_data, start=1):
-            print(f"\nJob #{index}")
+        for job in self.jobs_data:
+            print("\nJob #:", job["id"])
             print("Company:", job["company"])
             print("Role:", job["role"])
             print("Location:", job["location"])
@@ -80,7 +103,7 @@ class Jobs:
 
         print("\n===== SEARCH RESULTS =====")
         for index, job in enumerate(found_jobs, start=1):
-            print(f"\nJob #{index}")
+            print("Job #:", job["id"])
             print("Company:", job["company"])
             print("Role:", job["role"])
             print("Location:", job["location"])
@@ -94,23 +117,34 @@ class Jobs:
             print("\nNo job applications available.")
             return
 
-        company = input("Enter company name: ").strip().lower()
+        print("\n===== AVAILABLE JOBS =====")
 
-        matching_jobs = [
-            job for job in self.jobs_data if job["company"].lower() == company
-        ]
+        for job in self.jobs_data:
+            print(
+                f"ID: {job['id']} | "
+                f"Company: {job['company']} | "
+                f"Role: {job['role']} | "
+                f"Status: {job['status']}"
+            )
 
-        if not matching_jobs:
-            print("\nJob not found.")
+        try:
+            job_id = int(input("\nEnter Job ID to update: "))
+
+        except ValueError:
+            print("Invalid ID. Please enter a number.")
             return
 
-        if len(matching_jobs) > 1:
-            print("Multiple jobs found. Please use a unique company name.")
+        matching_job = next(
+            (job for job in self.jobs_data if job["id"] == job_id), None
+        )
+
+        if matching_job is None:
+            print("\nJob ID not found.")
             return
 
-        job = matching_jobs[0]
-
-        print("Current status:", job["status"])
+        print("\nCompany:", matching_job["company"])
+        print("Role:", matching_job["role"])
+        print("Current status:", matching_job["status"])
 
         new_status = input("Enter new status: ").strip()
 
@@ -118,7 +152,7 @@ class Jobs:
             print("Status cannot be empty.")
             return
 
-        job["status"] = new_status
+        matching_job["status"] = new_status
 
         self.save_jobs()
 
@@ -132,21 +166,41 @@ class Jobs:
             print("\nNo job applications available.")
             return
 
-        company = input("Enter company name to delete: ").strip().lower()
+        print("\n===== AVAILABLE JOBS =====")
 
-        matching_jobs = [
-            job for job in self.jobs_data if job["company"].lower() == company
-        ]
+        for job in self.jobs_data:
+            print(
+                f"ID: {job['id']} | "
+                f"Company: {job['company']} | "
+                f"Role: {job['role']} | "
+                f"Status: {job['status']}"
+            )
 
-        if not matching_jobs:
-            print("\nJob not found.")
+        try:
+            job_id = int(input("\nEnter Job ID to delete: "))
+
+        except ValueError:
+            print("Invalid ID. Please enter a number.")
             return
 
-        if len(matching_jobs) > 1:
-            print("Multiple jobs found. Please use a unique company name.")
+        matching_job = next(
+            (job for job in self.jobs_data if job["id"] == job_id), None
+        )
+
+        if matching_job is None:
+            print("\nJob ID not found.")
             return
 
-        self.jobs_data.remove(matching_jobs[0])
+        print("\nSelected job:")
+        print("Company:", matching_job["company"])
+        print("Role:", matching_job["role"])
+
+        confirmation = input("Are you sure you want to delete? (yes/no): ").strip()
+        if confirmation.strip().lower() != "yes":
+            print("\nDeletion cancelled.")
+            return
+
+        self.jobs_data.remove(matching_job)
 
         self.save_jobs()
 
