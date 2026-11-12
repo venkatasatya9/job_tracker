@@ -20,3 +20,5 @@ Thumbs.db
 jobs.json
 job.json
 user_data.json
+
+.coverage
